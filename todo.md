@@ -38,3 +38,16 @@
 - [x] Add GitHub Pages build and deployment workflow configuration
 - [x] Add GitHub Pages deployment documentation and iOS PWA installation instructions
 - [x] Validate the GitHub Pages static build output
+- [x] Correct the GitHub Pages workflow trigger configuration and re-run deployment
+- [x] Let parents change each child’s displayed name
+- [x] Display all money values in Hong Kong dollars
+- [x] Add a first-use introduction explaining the core family-money flows
+- [x] Test profile editing, HKD formatting, and onboarding persistence
+- [x] Let parents set the family name and edit parent display names
+- [x] Let parents customize the default currency symbol and use it across all money views
+- [x] Add a monthly family progress summary for savings, earnings, tasks, and decisions
+- [x] Test family profile changes, currency formatting, and monthly summary calculations
+- [x] Restart the development server after the preview became unresponsive
+- [ ] Confirm the preferred permanent PWA hosting route and provide installation guidance
+- [ ] Diagnose and resolve the published PWA maintenance-page availability issue
+- [ ] Verify the deployed GitHub Pages workflow trigger and guide the latest-source repository update

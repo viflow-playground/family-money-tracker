@@ -10,7 +10,9 @@ export interface MoneyDecision { id: string; memberId: string; type: MoneyDecisi
 export interface WorkTask { id: string; memberId: string; title: string; description: string; amount: number; status: WorkTaskStatus; createdAt: string; completedAt?: string; submittedAt?: string; approvedAt?: string; rewardAmount?: number; }
 export interface InterestRateChange { id: string; memberId: string; previousRate: number; newRate: number; changedAt: string; }
 export interface VirtualInterestSettings { enabled: boolean; ratesByMemberId: Record<string, number>; settlementDay: number; lastAppliedMonth?: string; rateHistory: InterestRateChange[]; }
-export interface FamilyData { members: FamilyMember[]; pocketMoneyRules: PocketMoneyRule[]; goals: SavingsGoal[]; decisions: MoneyDecision[]; workTasks: WorkTask[]; virtualInterest: VirtualInterestSettings; }
+export interface FamilyProfile { name: string; currencySymbol: string; }
+export interface FamilyProfileInput { name: string; currencySymbol: string; }
+export interface FamilyData { members: FamilyMember[]; pocketMoneyRules: PocketMoneyRule[]; goals: SavingsGoal[]; decisions: MoneyDecision[]; workTasks: WorkTask[]; virtualInterest: VirtualInterestSettings; familyProfile: FamilyProfile; hasSeenIntro: boolean; }
 export interface RecordDecisionInput { memberId: string; type: MoneyDecisionType; amount: number; title: string; category: string; goalId?: string; }
 export interface VirtualInterestInput { enabled: boolean; ratesByMemberId: Record<string, number>; settlementDay: number; }
 
@@ -23,7 +25,9 @@ export const decisionMeta: Record<MoneyDecisionType, { label: string; color: str
   work: { label: "Work income", color: "#6C4A9B", softColor: "#F1ECFA", icon: "task-alt" },
 };
 
-export const formatCurrency = (amount: number) => new Intl.NumberFormat("en-GB", { style: "currency", currency: "GBP", minimumFractionDigits: Number.isInteger(amount) ? 0 : 2, maximumFractionDigits: 2 }).format(amount);
+export let currencySymbol = "HK$";
+export const setCurrencySymbol = (value: string) => { const clean = value.trim().slice(0, 6); currencySymbol = clean || "HK$"; return currencySymbol; };
+export const formatCurrency = (amount: number) => `${currencySymbol}${new Intl.NumberFormat("en-HK", { minimumFractionDigits: Number.isInteger(amount) ? 0 : 2, maximumFractionDigits: 2 }).format(amount)}`;
 export const formatDate = (date: string) => new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short" }).format(new Date(date));
 export const formatShortDate = (date: string) => new Intl.DateTimeFormat("en-GB", { weekday: "short", day: "numeric", month: "short" }).format(new Date(date));
 export const childMembers = (data: FamilyData) => data.members.filter((member) => member.role === "child");
@@ -32,6 +36,26 @@ export const monthKey = (date = new Date()) => date.toISOString().slice(0, 7);
 export const calculateFamilySummary = (data: FamilyData) => {
   const children = childMembers(data); const totalSaved = children.reduce((sum, child) => sum + child.balance, 0); const goalSaved = data.goals.reduce((sum, goal) => sum + goal.saved, 0); const goalTarget = data.goals.reduce((sum, goal) => sum + goal.target, 0);
   return { totalSaved, goalSaved, goalTarget, goalProgress: goalTarget === 0 ? 0 : Math.round((goalSaved / goalTarget) * 100) };
+};
+
+export const renameChild = (data: FamilyData, memberId: string, nextName: string): FamilyData => {
+  const cleanName = nextName.trim().replace(/\s+/g, " ").slice(0, 24);
+  if (!cleanName) return data;
+  return { ...data, members: data.members.map((member) => member.id === memberId && member.role === "child" ? { ...member, name: cleanName } : member) };
+};
+
+export const renameFamilyMember = (data: FamilyData, memberId: string, nextName: string): FamilyData => {
+  const cleanName = nextName.trim().replace(/\s+/g, " ").slice(0, 24);
+  if (!cleanName) return data;
+  return { ...data, members: data.members.map((member) => member.id === memberId ? { ...member, name: cleanName } : member) };
+};
+
+export const updateFamilyProfile = (data: FamilyData, input: FamilyProfileInput): FamilyData => ({ ...data, familyProfile: { name: input.name.trim().replace(/\s+/g, " ").slice(0, 32) || "Our family", currencySymbol: input.currencySymbol.trim().slice(0, 6) || "HK$" } });
+
+export const calculateMonthlyProgress = (data: FamilyData, date = new Date()) => {
+  const key = monthKey(date); const decisions = data.decisions.filter((decision) => decision.date.startsWith(key)); const approvedTasks = data.workTasks.filter((task) => task.status === "approved" && (task.approvedAt ?? task.completedAt ?? task.createdAt).startsWith(key));
+  const earnings = decisions.filter((decision) => ["income", "work", "interest"].includes(decision.type)).reduce((sum, decision) => sum + decision.amount, 0); const saved = decisions.filter((decision) => decision.type === "save").reduce((sum, decision) => sum + decision.amount, 0); const spent = decisions.filter((decision) => decision.type === "spend").reduce((sum, decision) => sum + decision.amount, 0);
+  return { month: new Intl.DateTimeFormat("en-HK", { month: "long", year: "numeric" }).format(date), earnings: Math.round(earnings * 100) / 100, saved: Math.round(saved * 100) / 100, spent: Math.round(spent * 100) / 100, decisionsCount: decisions.length, approvedTaskCount: approvedTasks.length, children: childMembers(data).map((child) => { const childDecisions = decisions.filter((decision) => decision.memberId === child.id); return { member: child, earned: childDecisions.filter((decision) => ["income", "work", "interest"].includes(decision.type)).reduce((sum, decision) => sum + decision.amount, 0), saved: childDecisions.filter((decision) => decision.type === "save").reduce((sum, decision) => sum + decision.amount, 0), tasksDone: approvedTasks.filter((task) => task.memberId === child.id).length, choices: childDecisions.length }; }) };
 };
 
 export const applyDecision = (data: FamilyData, input: RecordDecisionInput): FamilyData => {
@@ -75,6 +99,8 @@ export const submitWorkTask = (data: FamilyData, taskId: string, date = new Date
 export const approveWorkTask = (data: FamilyData, taskId: string, date = new Date()): FamilyData => { const task = data.workTasks.find((item) => item.id === taskId); if (!task || task.status !== "submitted") return data; const approvalDate = date.toISOString(); const completedAt = task.completedAt ?? approvalDate; const taskForStreak = { ...task, status: "approved" as const, completedAt }; const previousTasks = data.workTasks.filter((item) => item.id !== task.id); const streak = calculateCompletionStreak([...previousTasks, taskForStreak], task.memberId, new Date(completedAt)); const rewardAmount = streakRewardFor(streak); const withBaseIncome = applyDecision(data, { memberId: task.memberId, type: "work", amount: task.amount, title: task.title, category: "Work task" }); const withBonus = rewardAmount > 0 ? applyDecision(withBaseIncome, { memberId: task.memberId, type: "work", amount: rewardAmount, title: `${streak}-day effort streak reward`, category: "Streak reward" }) : withBaseIncome; return { ...withBonus, workTasks: withBonus.workTasks.map((item) => item.id === taskId ? { ...item, status: "approved", completedAt, approvedAt: approvalDate, rewardAmount } : item) }; };
 
 export const initialFamilyData: FamilyData = {
+  hasSeenIntro: false,
+  familyProfile: { name: "Our family", currencySymbol: "HK$" },
   members: [{ id: "sarah", name: "Sarah", role: "parent", color: "#176B73", balance: 0 }, { id: "alex", name: "Alex", role: "parent", color: "#355C9A", balance: 0 }, { id: "mia", name: "Mia", role: "child", color: "#E98163", balance: 320 }, { id: "theo", name: "Theo", role: "child", color: "#7761B8", balance: 465 }],
   virtualInterest: { enabled: true, ratesByMemberId: { mia: 1, theo: 1 }, settlementDay: 1, rateHistory: [] },
   pocketMoneyRules: [{ id: "mia-weekly", memberId: "mia", amount: 12, cadence: "Weekly", nextPayment: "2026-08-28T09:00:00.000Z" }, { id: "theo-weekly", memberId: "theo", amount: 15, cadence: "Weekly", nextPayment: "2026-08-28T09:00:00.000Z" }],
