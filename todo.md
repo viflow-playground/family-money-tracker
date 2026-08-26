@@ -1,0 +1,40 @@
+# Project TODO
+
+- [x] Define and persist local family money data for parents and children
+- [x] Build the family dashboard with member balances and money summary
+- [x] Build the activity ledger with decision-type filters
+- [x] Build individual savings-goal progress views
+- [x] Build periodic pocket-money management and payment recording
+- [x] Build the add-decision flow for spending, saving, and investment choices
+- [x] Add family settings and local data guidance
+- [x] Apply the Family Money Tracker visual system and responsive mobile navigation
+- [x] Generate and configure the custom application icon
+- [x] Add deterministic tests for money calculations and local data updates
+- [x] Verify the mobile interface and resolve implementation issues
+- [x] Host generated icon assets and resolve the checkpoint media-size limit
+- [x] Add configurable virtual monthly interest for balances held with a parent
+- [x] Record applied virtual interest as visible family activity
+- [x] Test virtual interest calculations and settings updates
+- [x] Support an independent virtual monthly interest rate for each child
+- [x] Update interest previews and activity records to use each child’s configured rate
+- [x] Test child-specific virtual interest settings and monthly calculations
+- [x] Add a child-friendly explanation of how monthly interest is calculated and added
+- [x] Record and display a transparent history of individual interest-rate changes
+- [x] Add configurable monthly settlement timing with in-app automatic calculation and parent reminder state
+- [x] Test rate history and monthly settlement scheduling logic
+- [x] Let parents create paid work tasks for an individual child
+- [x] Let children view assigned work, expected income, and completion status
+- [x] Let parents approve completed work and add the income to the child’s balance and activity record
+- [x] Test work-task status changes and approved task income
+- [x] Add consecutive task-completion streak tracking and bonus rewards
+- [x] Show children their current streak and next streak reward
+- [x] Add secure parent PIN setup and verification for task-income approvals
+- [x] Require parent PIN verification before changing virtual-interest settings
+- [x] Test streak rewards and protected parent actions
+- [x] Add iOS-compatible PWA manifest and home-screen presentation configuration
+- [x] Add an offline service worker for the installed web experience
+- [x] Add clear Safari installation guidance for the iOS PWA
+- [x] Validate the PWA manifest, service-worker registration, and build configuration
+- [x] Add GitHub Pages build and deployment workflow configuration
+- [x] Add GitHub Pages deployment documentation and iOS PWA installation instructions
+- [x] Validate the GitHub Pages static build output
